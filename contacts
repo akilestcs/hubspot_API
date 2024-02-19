@@ -1,4 +1,4 @@
-Engagement:
+Contacts Migration:
 
 #!/bin/zsh
 #set -x
@@ -26,3 +26,26 @@ printf "%s\n" "$DocumentId~$ContactId~$DocumentTypeCode~$SearchText~$Description
 #rm test.json test1.json
 done
 
+
+Calls:
+
+set -x
+for i in `cat calls.txt`
+do
+created_date=`curl --request GET --url "https://api.hubapi.com/crm/v3/objects/calls/$i" --header 'authorization: Bearer pat-na1-' | jq '.properties.hs_createdate'`
+notes=`curl --request GET --url "https://api.hubapi.com/engagements/v1/engagements/$i" --header 'authorization: Bearer pat-na1-' | jq '.engagement.bodyPreview'|sed 's/\\n//g' | sed 's/\\r//g' `
+title=`curl --request GET --url "https://api.hubapi.com/engagements/v1/engagements/$i" --header 'authorization: Bearer pat-na1-' | jq '.metadata.title'|sed 's/\\n//g' | sed 's/\\r//g' `
+printf "%s\n" "$i~$created_date~$notes~$title" >> calls_output.txt
+done
+
+Meetings:
+
+for i in `cat meetings.txt`
+do
+created_date=`curl --request GET --url "https://api.hubapi.com/crm/v3/objects/meetings/$i" --header 'authorization: Bearer pat-na1-' | jq '.properties.hs_createdate'`
+curl --request GET --url "https://api.hubapi.com/engagements/v1/engagements/$i" --header 'authorization: Bearer pat-na1-' > $i.json
+title=`cat $i.json | jq '.metadata.title'`
+location=`cat $i.json | jq '.metadata.location'`
+body=`cat $i.json | jq '.engagement.bodyPreview'`
+printf "%s\n" "$i~$created_date~$title~$body~$location" >> meetings_output.txt
+done
