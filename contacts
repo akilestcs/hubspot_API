@@ -1,0 +1,28 @@
+Engagement:
+
+#!/bin/zsh
+#set -x
+for i in `cat input.csv`
+do
+col1=`echo $i | cut -d, -f1`
+col2=`echo $i | cut -d, -f2`
+curl --request GET --url "https://api.hubapi.com/engagements/v1/engagements/$col2" --header 'authorization: Bearer pat-na1' > test.json
+curl --request GET --url "https://api.hubapi.com/crm/v3/objects/emails/$col2" --header 'authorization: Bearer pat-na1' > test1.json
+DocumentId=`cat test.json | jq '.engagement.id'`
+ContactId=$col1
+DocumentTypeCode="_EML"
+SearchText=`cat test.json | jq '.engagement.bodyPreview'`
+Description=`cat test.json | jq '.metadata.subject'`
+Created=`cat test1.json | jq '.properties.hs_createdate'`
+StatusFlag="A"
+EmailSubject=`cat test.json | jq '.metadata.subject'`
+ToAddress=`cat test.json | jq '.metadata.to' | jq '.[0]' | jq '.email'`
+FromAddress=`cat test.json | jq '.metadata.from | .email'`
+EmailMessageId="cd53952d@prospect365.com"
+HtmlContent=`cat test.json | jq '.engagement.bodyPreviewHtml'`
+SaveConversation=1
+printf "%s\n" "$DocumentId~$ContactId~$DocumentTypeCode~$SearchText~$Description~$Created~$StatusFlag~$EmailSubject~$ToAddress~$FromAddress~$EmailMessageId~$HtmlContent~$SaveConversation" | sed 's/\\n//g' | sed 's/\\r//g'  >> output.txt
+#echo -n  curl -X POST '"https://crm-odata-v1-australiaeast.prospect365.com/Documents"' -H '"accept: application/json"' -H '"Authorization: Bearer fca34123603b33e4ab75af79e1596e13"' -H '"Content-Type: application/json"' -d "'"{'"DocumentId"': $DocumentId,'"ContactId"': $ContactId,'"DocumentTypeCode"': "_EML",'"SearchText"': $SearchText,'"Description"': $Description,'"Created"': $Created,'"StatusFlag"': "A",'"EmailSubject"': $EmailSubject,'"ToAddress"': $ToAddress,'"FromAddress"': $FromAddress,'"EmailMessageId"': "cd53952d-ace9-471a-9507-8a3bd6998c83@prospect365.com",'"HtmlContent"': $HtmlContent,'"SaveConversation"': 1}"'" > output_mail.txt
+#rm test.json test1.json
+done
+
